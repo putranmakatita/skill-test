@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Post extends Model
@@ -13,7 +13,7 @@ class Post extends Model
 
     protected $fillable = ['user_id', 'title', 'content', 'is_draft', 'published_at'];
 
-    // Requirement 4-1 & 4-4: Define "Active"
+    // Requirement 3: Automated status logic
     public function scopeActive(Builder $query): void
     {
         $query->where('is_draft', false)

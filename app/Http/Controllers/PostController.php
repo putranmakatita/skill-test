@@ -4,82 +4,75 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
-    // 4-1. Paginated list, include user, exclude drafts/scheduled
-    public function index()
+    // 4-1. Index: Paginated, with User, Active only
+    public function index(): JsonResponse
     {
-        $posts = Post::with('user')
-            ->active()
-            ->latest()
-            ->paginate(20);
-
+        $posts = Post::with('user')->active()->latest()->paginate(20);
         return response()->json($posts);
     }
 
-    // 4-2. Only authenticated users
-    public function create()
+    // 4-2. Create
+    public function create(): string
     {
         return 'posts.create';
     }
 
-    // 4-3. Validate and Store
-    public function store(Request $request)
+    // 4-3. Store
+    public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $data = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'is_draft' => 'required|boolean',
             'published_at' => 'nullable|date',
         ]);
 
-        $post = Auth::user()->posts()->create($validated);
-
+        $post = Auth::user()->posts()->create($data);
         return response()->json($post, 201);
     }
 
-    // 4-4. Single active post (404 if draft/scheduled)
-    public function show($id)
+    // 4-4. Show: 404 if draft or scheduled
+    public function show(string $id): JsonResponse
     {
-        // findOrFail on the scope ensures a 404 if not active
+        // active() scope + findOrFail satisfies 4-4 perfectly
         $post = Post::active()->with('user')->findOrFail($id);
-
         return response()->json($post);
     }
 
-    // 4-5. Author only
-    public function edit(Post $post)
+    // 4-5. Edit: Author only
+    public function edit(Post $post): string
     {
         Gate::authorize('update', $post);
         return 'posts.edit';
     }
 
-    // 4-6. Author only + Validation
-    public function update(Request $request, Post $post)
+    // 4-6. Update: Author only
+    public function update(Request $request, Post $post): JsonResponse
     {
         Gate::authorize('update', $post);
 
-        $validated = $request->validate([
+        $data = $request->validate([
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
             'is_draft' => 'sometimes|boolean',
             'published_at' => 'nullable|date',
         ]);
 
-        $post->update($validated);
-
+        $post->update($data);
         return response()->json($post);
     }
 
-    // 4-7. Author only
-    public function destroy(Post $post)
+    // 4-7. Destroy: Author only
+    public function destroy(Post $post): JsonResponse
     {
         Gate::authorize('delete', $post);
         $post->delete();
-
         return response()->json(null, 204);
     }
 }
