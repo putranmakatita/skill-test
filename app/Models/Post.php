@@ -3,37 +3,26 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Post extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [
-        'user_id',
-        'title',
-        'content',
-        'is_draft',
-        'published_at'
-    ];
+    protected $fillable = ['user_id', 'title', 'content', 'is_draft', 'published_at'];
 
-    /**
-     * Relationship to the User (Author)
-     */
-    public function user()
+    // Requirement 4-1 & 4-4: Define "Active"
+    public function scopeActive(Builder $query): void
     {
-        return $this->belongsTo(User::class);
+        $query->where('is_draft', false)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
-    /**
-     * Scope for published posts
-     */
-    public function scopePublished($query)
+    public function user(): BelongsTo
     {
-        return $query->whereNotNull('published_at')
-            ->where('published_at', '<=', now());
+        return $this->belongsTo(User::class);
     }
 }
