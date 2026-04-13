@@ -1,0 +1,22 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+use Illuminate\Database\Seeder;
+
+class UserSeeder extends Seeder
+{
+    public function run(): void
+    {
+        User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => bcrypt('password'),
+            ]
+        );
+
+        User::factory(10)->create();
+    }
+}
