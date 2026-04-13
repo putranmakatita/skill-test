@@ -35,7 +35,7 @@ Route::middleware(['auth'])->group(function () {
     // 4-5, 4-6, 4-7. Edit, Update, and Delete (Only author via PostPolicy)
     Route::get('posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
     Route::put('posts/{post}', [PostController::class, 'update'])->name('posts.update');
-    // Route::patch('posts/{post}', [PostController::class, 'update']);
+    Route::patch('posts/{post}', [PostController::class, 'update']);
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
 });
 
