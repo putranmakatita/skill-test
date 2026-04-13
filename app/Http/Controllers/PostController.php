@@ -3,48 +3,47 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Http\Requests\StorePostRequest;
+use App\Http\Resources\PostResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
-    // 4-1. Index: Paginated list of active posts
+    // 4-1. Index: Paginated, Published only, Eager-load user
     public function index()
     {
         $posts = Post::with('user')
             ->published()
+            ->latest()
             ->paginate(20);
 
-        return response()->json($posts);
+        // Best Practice: Use Resources for JSON consistency
+        return PostResource::collection($posts);
     }
 
-    // 4-2. Create: Authenticated only
+    // 4-2. Create: Simple string return
     public function create()
     {
         return 'posts.create';
     }
 
-    // 4-3. Store: Validate and Create
-    public function store(Request $request)
+    // 4-3. Store: Use FormRequest for validation
+    public function store(StorePostRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'body'  => 'required|string',
-            'published_at' => 'nullable|date',
-        ]);
+        $post = Auth::user()->posts()->create($request->validated());
 
-        $post = Auth::user()->posts()->create($validated);
-
-        return response()->json($post, 201);
+        return new PostResource($post);
     }
 
-    // 4-4. Show: Single active post (404 if draft/scheduled)
+    // 4-4. Show: 404 if not published
     public function show($id)
     {
+        // Use findOrFail on the scope to trigger automatic 404
         $post = Post::published()->with('user')->findOrFail($id);
 
-        return response()->json($post);
+        return new PostResource($post);
     }
 
     // 4-5. Edit: Author only
@@ -55,19 +54,13 @@ class PostController extends Controller
     }
 
     // 4-6. Update: Author only + Validation
-    public function update(Request $request, Post $post)
+    public function update(StorePostRequest $request, Post $post)
     {
         Gate::authorize('update', $post);
 
-        $validated = $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'body'  => 'sometimes|required|string',
-            'published_at' => 'nullable|date',
-        ]);
+        $post->update($request->validated());
 
-        $post->update($validated);
-
-        return response()->json($post);
+        return new PostResource($post);
     }
 
     // 4-7. Destroy: Author only
@@ -77,6 +70,6 @@ class PostController extends Controller
 
         $post->delete();
 
-        return response()->json(['message' => 'Post deleted successfully']);
+        return response()->json(['message' => 'Deleted'], 204);
     }
 }
